@@ -1,0 +1,203 @@
+
+MoBlock README v0.9
+http://moblock.berlios.de
+
+.Introduction.
+
+   MoBlock is a linux console application that blocks connections from/to hosts
+   listed in a file in peerguardian format (guarding.p2p) and since version
+   0.4 it supports new peerguardian 2.x files ( p2p.p2b ) and ipfilter.dat
+   files.
+   It uses iptables ipqueue library and it is very light in resource
+   usage. I test it on an old Celeron 400 Mhz and its cpu usage has only spikes
+   at 5% under normal usage (edonkey, bittorrent etc...).
+
+** UPDATE: from version 0.6 MoBlock supports the new kernel interface NFQUEUE
+   added in kernel 2.6.14 and the default is to compile and use it instead
+   of the deprecated ip_queue interface. If you want to use the old interface
+   you must edit the Makefile, read below to know what to modify.
+
+
+.Requirements.
+
+1) iptables and kernel support for connection and state tracking (
+   ip_conntrack,ipt_state) and ip_queue or ipt_NFQUEUE kernel modules/built-in.
+
+   At least kernel 2.6.14 is required to use the NFQUEUE interface (the
+   default interface from MoBlock version 0.6) and userspace library:
+
+   libnfnetlink 0.0.14
+   libnetfilter_queue 0.0.11
+
+   These are the kernel modules i have with MoBlock running
+   on 2.6.9-ac6:
+	
+	iptable_filter          2016  1
+	ipt_state               1312  4
+	ip_conntrack           37716  1 ipt_state
+	ip_tables              14496  2 iptable_filter,ipt_state
+	ip_queue                7608  0
+
+   ...and these with kernel 2.6.15 using new NFQUEUE interface:
+
+	nfnetlink_queue         9280  1
+	nfnetlink               4824  2 nfnetlink_queue
+	ipt_NFQUEUE             1408  2
+	ipt_state               1472  0
+	ip_conntrack           40044  1 ipt_state
+	iptable_filter          2176  1
+	ip_tables              17600  3 ipt_NFQUEUE,ipt_state,iptable_filter
+	
+	...and these with kernel 2.6.23 using NFQUEUE interface:
+	
+	nfnetlink_queue         9344  1
+	nfnetlink               4568  2 nfnetlink_queue
+	ipt_REJECT              3520  2
+	xt_mark                 1600  2
+	nf_conntrack_ipv4      12424  5
+	iptable_filter          2308  1
+	ip_tables              10328  1 iptable_filter
+	xt_state                1984  5
+	nf_conntrack           48356  2 nf_conntrack_ipv4,xt_state
+	xt_NFQUEUE              1664  3
+	x_tables               11396  5 ipt_REJECT,xt_mark,ip_tables,xt_state,xt_NFQUEUE
+	
+	(notice that ipt_NFQUEUE has changed to xt_NFQUEUE, same thing for other modules too)
+
+2) A valid guarding.p2p/ipfilter.dat/p2p.p2b host file in /etc ( /etc/guarding.p2p ).
+   MoBlock tries to skip malformed or duplicate ranges but
+   if it founds something unexpected it segfaults :P
+   
+   Update: Thanks to Andrew de Quincey patch MoBlock now uses regular
+   expressions to load guarding.p2p files so this should not be
+   a problem anymore for these lists.
+   In my tests i used lists from http://methlabs.org
+
+   From version 0.7 loaded ranges are now automatically merged when
+   overlapping or already included ranges are found (guarding.p2p files
+   usually have many of these).
+
+3) Minimum iptables knowledge (or trust my start script).
+   MoBlock filter only packets that are QUEUEd with iptables. So it's up
+   to you to choose what traffic you want to be filtered.
+   For example if you want MoBlock to filter all the new TCP connections
+   that are initiated from your box using NFQUEUE kernel interface:
+
+	iptables -A OUTPUT -p tcp -m state --state NEW -j NFQUEUE
+
+   NFQUEUE supports multiple queues (using --queue-num option), you MUST
+   specify it when launching MoBlock if you don't use the default queue 0
+   using the -q command line option ( -q 0-65535 ).
+   Running two or more MoBlock instances to handle different queues was
+   not tested, do it at your own risk!
+
+   A simple start script is provided that makes MoBlock filter all new
+   incoming and outgoing connections for all protocols. If you use the
+   new kernel interface use the MoBlock-nfq.sh script, if you use the old
+   one use the MoBlock-ipq.sh script.
+   If you want MoBlock not to filter traffic to specific ports (for ex.
+   you want to browse a website that is in your block list) you can edit
+   the start script to add ports you don't want to be filtered.
+   For the previuos example you will use:
+
+	WHITE_TCP_OUT="http"
+
+   It will make MoBlock to not filter OUTgoing TCP traffic to http port.
+   Other variables are for INcoming and ForWarded traffic, TCP and UDP.
+
+   Warning: many block lists include the loopback address so you can have
+   strange troubles accessing localhost services. I added in the start
+   script explicit rules to accept localhost-to-locahost connections.
+
+** VERY IMPORTANT WARNING!! **
+
+   When a packet hits a NFQUEUE/QUEUE rule it will be accepted or dropped by
+   MoBlock (well it is what you want right? :P ) so it will NOT be checked
+   by other rules that may follow in the chain!
+
+.Installation & Usage.
+
+   Just untar somwhere.
+   To build MoBlock from sources just do
+
+   make
+
+   in the directory where you extracted it. If you want to compile using
+   the old libipq library you must edit the Makefile, on top of it you
+   will find detailed instructions.
+
+   The static version was compiled on Slackware 10.2 with gcc 3.4.5, if you
+   don't want to install the libnetfilter libraries try it, just rename it
+   to "moblock".
+
+   To start it just launch MoBlock-nfq.sh (if you use the new kernel
+   interface) or MoBlock-ipq.sh (if you use the old kernel interface) as root,
+   for example:
+
+   ./MoBlock-nfq.sh &
+
+   By default it will load the block list from /etc/guarding.p2p and
+   will log its activity to ./MoBlock.log, you can edit the script if you
+   want to change them.
+   You can specify a whitelist of ports in the start script as explained
+   before.
+   If you want to use new p2p.pdb files change this line in the start script:
+
+	./moblock -p /etc/guarding.p2p MoBlock.log
+
+   into this:
+
+	./moblock -n /etc/p2p.p2b MoBlock.log
+
+   or if you want to use ipfilter.dat files:
+
+	./moblock -d /etc/ipfilter.dat MoBlock.log
+
+   To specify a NFQUEUE queue number:
+
+	./moblock -p /etc/guarding.p2p -q 5 MoBlock.log
+	
+   From version 0.9 MoBlock supports MARKing packets and RETURN them to
+   iptables, there's an example start script (MoBlock-nfq-reject.sh) that
+   uses this feature to REJECT packet instead of dropping them. It can help
+   in complex firewall configuration where you need more control of packets
+   flow after MoBlock inspection.
+   See the mentioned start script for reference, you can set the MARK value
+   for packets that MoBlock would drop (ip in list) with the "-r" command line
+   option and for packets that MoBlock would accept (ip not in list) with
+   the "-a" command line option.
+
+   To stop MoBlock:
+
+   kill -TERM <MoBlockPid>
+
+   While shutting down it will dump some stats to /var/log/MoBlock.stats
+   To obtain stats about blocked ranges while it's running:
+
+   kill -USR1 <MoBlockPid>	# write stats to logfile
+   kill -USR2 <MoBlockPid>  # write stats to /var/log/MoBlock.stats
+
+** NEW: to reload the blocklist while MoBlock is running send to it the
+   HUP signal:
+
+   kill -HUP <MoBlockPid>	# reloads blocklist and resets stats
+
+   Moreover when HUP or USR1 is received the log file will be reopened
+   to allow log file rotation.
+
+.Credits.
+
+- Thomas Niemann (thomasn at epaperpress.com) for the red/black trees
+  free implementation, used to store and search ip ranges. You can 
+  find it at www.oopweb.com
+- Chris Lowth, developer of FTwall (www.lowth.com/p2pwall), i 
+  took some code and ideas from his FTwall
+- Andrew de Quincey (adq at lidskialf dot net) for regular expressions
+  and command line args patch
+- clessing at freenet dot de for logfile rotation
+  patches, pid file creation, start script, fixes/files for debian packaging
+- David Walluck, patch for proper loading of p2b files
+- jre, for continuing clessing work on debian packaging and many other
+  contributions
+
+Last Updated: 15/Oct/2007

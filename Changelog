@@ -1,0 +1,72 @@
+
+MoBlock Changleog
+http://moblock.berlios.de
+
+---
+
+0.9rc2: - fix for kernel 2.6.23
+	 - support for MARKing packets instead of DROPping or
+	   ACCEPTing
+	 - example start script that REJECTs packets instead of
+	   DROPping.
+	 - Integrated a patch from David Walluck for proper loading
+	   of p2b files (version 2)
+	 - command line options for logging to syslog, stdout
+	   and log timestamping
+	 - fixed loading pg1 lists with comments (lines starting
+	   with '#')
+	 - fixed a bug in ranges merge
+	 - applied patch 2223 by badfish99: "IPs logged with bytes
+	   reversed on big-endian m/c"
+
+---
+
+0.8: - support for NFQUEUE-ing from iptables FORWARD chain (thx to
+       hyakki for suggestions and testing!)
+     - included patches from Maximilian Mehnert to support log file
+       rotation, creation of pid file, fixes and files for debian
+       packaging and new start script supporting ports whitelisting
+
+---
+
+0.7: - loaded ranges are now automatically merged when overlapping
+       or already included ranges are found (guarding.p2p files
+       usually have many of these)
+     - added command line option -q to specify queue number (only
+       when using NFQUEUE interface), must match iptables
+       --queue-num option. Defaults to 0 if not specified
+     - on startup prints used options and ranges stats
+     - better handling of command line options
+     - fix string handling bug
+
+---
+
+0.6: - added support for new kernel interface NFQUEUE
+       (from kernel 2.6.14)
+     - blocklist can be reloaded on runtime sending
+       HUP signal (kill -HUP pid)
+
+---
+
+0.4: - can now use new peerguardian 2.x lists ( .pdb files ) and
+       ipfilter.dat, see README
+     - minor random fixes
+
+---
+
+0.3: - added patches for regex blocklist loading, command line args and
+       Makefile from Andrew de Quincey ( adq at lidskialf dot net )
+     - Updated README and start script, now you can start it with
+	./MoBlock.sh &
+       by default it will load the block list from /etc/guarding.p2p and
+       will log to ./MoBlock.log
+       Edit the start script if you want to use other files.
+     - Stats always written on /var/log/MoBlock.stats on exit
+
+---
+
+0.2: first public release
+
+---
+
+0.1: internal version
