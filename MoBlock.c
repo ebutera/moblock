@@ -1,7 +1,7 @@
 /*
  * MoBlock.c - Morpheus' Blocker
  *
- * Copyright (C) 2004 Morpheus (ebutera at users.berlios.de)
+ * Copyright (C) 2004-2011 Enrico Butera (ebutera at users.berlios.de)
  *
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *
@@ -48,7 +48,7 @@
 	#include <libnetfilter_queue/libnetfilter_queue.h>
 #endif
 
-#define MB_VERSION	"0.9rc2"
+#define MB_VERSION	"0.9"
 
 #define BUFSIZE		2048
 #define PAYLOADSIZE	21
