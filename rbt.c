@@ -2,7 +2,7 @@
  * rbt.c Red-Black Trees implementation
  *
  * Author: Thomas Niemann <thomasn at epaperpress.com>
- * Modified by: Enrico Butera <ebutera at users.berlios.de>
+ * Modified by: Enrico Butera <ebutera at users.sourceforge.net>
  *
  * From Thomas guide about reb-black trees on oopweb.com:
  *
