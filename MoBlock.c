@@ -1,7 +1,7 @@
 /*
  * MoBlock.c - Morpheus' Blocker
  *
- * Copyright (C) 2004-2011 Enrico Butera (ebutera at users.berlios.de)
+ * Copyright (C) 2004-2011 Enrico Butera (ebutera at users.sourceforge.net)
  *
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *
